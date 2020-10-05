@@ -26,8 +26,34 @@ Solution proposal for  Kotlin koans
 * [Introduction](#introduction)
 * [ Filter; map](#filter-map)
 * [All, Any and other predicates](#all-any-and-other-predicates)
-* [FlatMap](#flatMap)
+* [FlatMap](#flatmap)
 * [Max; min](#max-min)
+* [Sort](#sort)
+* [Sum](#sum)
+* [Group By](#group-by)
+* [Partition](#partition)
+* [Fold](#fold)
+* [Compound tasks](#compound-tasks)
+* [Get used to new style](#get-used-to-new-style)
+## Properties
+* [Properties](#properties)
+* [Lazy property](#lazy-property)
+* [Delegates example](#delegates-example)
+* [Delegates](#delegates)
+## Builders
+* [Extension function literals](#extension-function-literals)
+* [String and map builders](#string-and-map-builders)
+* [The function apply](#the-function-apply)
+* [Builders: how it works](#builders-how-it-works)
+## Generics
+* [Generic functions](#generic-functions)
+
+
+
+
+
+
+
 
 
 ## Simple Functions
@@ -517,5 +543,426 @@ fun Shop.getCustomerWithMaximumNumberOfOrders(): Customer? {
 // Return the most expensive product which has been ordered
 fun Customer.getMostExpensiveOrderedProduct(): Product?{
     return this.orders.flatMap{it.products}.maxByOrNull{it.price}
+}
+```
+## Sort
+Implement Shop.getCustomersSortedByNumberOfOrders() using sorted or sortedBy.
+```Kotlin
+listOf("bbb", "a", "cc").sorted() == listOf("a", "bbb", "cc")
+listOf("bbb", "a", "cc").sortedBy { it.length } == li
+```
+- ### Solution
+```Kotlin
+// Return a list of customers, sorted by the ascending number of orders they made
+fun Shop.getCustomersSortedByNumberOfOrders(): List<Customer> 
+    =  this.customers.sortedBy{it.orders.size}
+```
+## Sum
+Implement Customer.getTotalOrderPrice() using sum or sumBy.
+```Kotlin
+listOf(1, 5, 3).sum() == 9
+listOf("a", "b", "cc").sumBy { it.length() } == 4
+If you want to sum the double values, use sumByDouble.
+```
+- ### Solution
+```Kotlin
+// Return the sum of prices of all products that a customer has ordered.
+// Note: the customer may order the same product for several times.
+fun Customer.getTotalOrderPrice(): Double
+= this.orders.flatMap{it.products}.sumByDouble{it.price}
+```
+## Group By
+Implement Shop.groupCustomersByCity() using groupBy.
+```Kotlin
+val result = listOf("a", "b", "ba", "ccc", "ad").groupBy { it.length() }
+result == mapOf(1 to listOf("a", "b"), 2 to listOf("
+```
+- ### Solution
+```Kotlin
+// Return a map of the customers living in each city
+fun Shop.groupCustomersByCity(): Map<City, List<Customer>> 
+    { val customers=this.customers
+        return customers.groupBy{it.city}
+    }
+```
+## Partition
+Implement Shop.getCustomersWithMoreUndeliveredOrdersThanDelivered() using partition.
+```Kotlin
+val numbers = listOf(1, 3, -4, 2, -11)
+val (positive, negative) = numbers.partition { it > 0 }
+positive == listOf(1, 3, 2)
+negative == listOf(-4, -11)
+Note that destructuring declaration syntax is used in this example.
+```
+- ### Solution
+```Kotlin
+// Return customers who have more undelivered orders than delivered
+fun Shop.getCustomersWithMoreUndeliveredOrdersThanDelivered(): Set<Customer>
+    {
+      return this.customers.filter{
+          val(delivered,undelivered)=it.orders.partition{it.isDelivered}
+          delivered.size<undelivered.size
+      }.toSet()
+    }
+```
+## Fold
+Implement Shop.getSetOfProductsOrderedByEveryCustomer() using fold.
+```Kotlin
+listOf(1, 2, 3, 4).fold(1, {
+    partProduct, element ->
+    element * partProduct
+}) == 24
+```
+- ### Solution
+```Kotlin
+// Return the set of products that were ordered by every customer
+fun Shop.getSetOfProductsOrderedByEveryCustomer(): Set<Product> {
+    val orders=this.customers.flatMap{it.orders}
+    val pducts=orders.flatMap{it.products}.toSet()
+   
+ return this.customers.fold(pducts){ acc,customer->
+ customer.orders.flatMap{it.products}.toSet().intersect(acc)
+ }
+        
+}
+```
+## Compound tasks
+Implement Customer.getMostExpensiveDeliveredProduct() and Shop.getNumberOfTimesProductWasOrdered() using functions from the Kotlin standard library.
+- ### Solution
+```Kotlin
+// Return the most expensive product among all delivered products
+// (use the Order.isDelivered flag)
+fun Customer.getMostExpensiveDeliveredProduct(): Product? {
+    val deliveredOrders=this.orders.filter{it.isDelivered}
+     val deliveredProducts=deliveredOrders.flatMap{it.products}
+     return deliveredProducts.maxByOrNull{it.price}
+}
+
+// Return how many times the given product was ordered.
+// Note: a customer may order the same product for several times.
+fun Shop.getNumberOfTimesProductWasOrdered(product: Product): Int {
+    val orderedProducts=this.customers.flatMap{it.orders}
+    return orderedProducts.flatMap{it.products}.count{it==product}
+}
+```
+## Get used to new style
+Rewrite the following Java function to Kotlin.
+```Java
+public Collection<String> doSomethingStrangeWithCollection(
+        Collection<String> collection
+) {
+    Map<Integer, List<String>> groupsByLength = Maps.newHashMap();
+    for (String s : collection) {
+        List<String> strings = groupsByLength.get(s.length());
+        if (strings == null) {
+            strings = Lists.newArrayList();
+            groupsByLength.put(s.length(), strings);
+        }
+        strings.add(s);
+    }
+​
+    int maximumSizeOfGroup = 0;
+    for (List<String> group : groupsByLength.values()) {
+        if (group.size() > maximumSizeOfGroup) {
+            maximumSizeOfGroup = group.size();
+        }
+    }
+​
+    for (List<String> group : groupsByLength.values()) {
+        if (group.size() == maximumSizeOfGroup) {
+            return group;
+        }
+    }
+    return null;
+}
+```
+ - ### Solution
+ ```Kotlin
+ fun doSomethingStrangeWithCollection(collection: Collection<String>): Collection<String>? {
+
+    val groupsByLength = collection. groupBy { s -> s.length }
+
+    val maximumSizeOfGroup = groupsByLength.values.map { group -> group.size }.max()
+
+    return groupsByLength.values.firstOrNull { group -> maximumSizeOfGroup==group.size }
+}
+ ```
+## Properties
+Read about properties in Kotlin.
+
+Add a custom setter to PropertyExample.propertyWithCounter so that the counter property is incremented every time propertyWithCounter is assigned to.
+- ### Solution
+```Kotlin
+class PropertyExample() {
+    var counter = 0
+          set
+    var propertyWithCounter: Int? = null
+         set(value){
+             field=value
+             counter++
+         }
+}
+```
+## Lazy property
+Add a custom getter to make the `'lazy'` val really lazy. It should be initialized by the invocation of `'initializer()'` at the moment of the first access.
+
+You can add as many additional properties as you need.
+
+Do not use delegated properties!
+- ### Solution
+```Kotlin
+class LazyProperty(val initializer: () -> Int) {
+     var laz:Int?=null
+             get(){
+                 if(field==null){
+                    field=initializer()
+                 }
+                 return field
+             }
+    
+      
+    val lazy: Int
+        get() {
+           return laz!!
+        }
+}
+```
+## Delegates example
+Read about delegated properties and make the property lazy by using delegates.
+- ### Solution
+```Kotlin
+class LazyProperty(val initializer: () -> Int) {
+    val lazyValue: Int by lazy{initializer()}
+}
+```
+## Delegates
+You may declare your own delegates. Implement the methods of the class `'EffectiveDate'` so it can be delegated to. Store only the time in milliseconds in `'timeInMillis'` property.
+
+Use the extension functions `MyDate.toMillis()` and `Long.toDate()`, defined at `MyDate.kt`
+- ### Solution
+```Kotlin
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
+
+class D {
+    var date: MyDate by EffectiveDate()
+}
+
+class EffectiveDate<R> : ReadWriteProperty<R, MyDate> {
+
+    var timeInMillis: Long? = null
+
+    override fun getValue(thisRef: R, property: KProperty<*>): MyDate {
+        return timeInMillis!!.toDate()
+    }
+
+    override fun setValue(thisRef: R, property: KProperty<*>, value: MyDate) {
+        if(timeInMillis==null){
+            timeInMillis=value.toMillis()
+        }
+    }
+}
+```
+## Extension function literals
+Read about function literals with receiver.
+
+You can declare isEven and isOdd as values, that can be called as extension functions. Complete the declarations below.
+- ### Solution
+```Kotlin
+fun task(): List<Boolean> {
+    val isEven: Int.() -> Boolean = {this%2==0}
+    val isOdd: Int.() -> Boolean = { this%2==1 }
+
+    return listOf(42.isOdd(), 239.isOdd(), 294823098.isEven())
+}
+```
+## String and map builders
+Extension function literals are very useful for creating builders, e.g.:
+```Kotlin
+fun buildString(build: StringBuilder.() -> Unit): String {
+    val stringBuilder = StringBuilder()
+    stringBuilder.build()
+    return stringBuilder.toString()
+}
+​
+val s = buildString {
+    this.append("Numbers: ")
+    for (i in 1..3) {
+        // 'this' can be omitted
+        append(i)
+    }
+}
+​
+s == "Numbers: 123"
+```
+Add and implement the function `'buildMutableMap'` with one parameter (of type extension function) creating a new HashMap, building it and returning it as a result. The usage of this function is shown below.
+- ### Solution
+```Kotlin
+import java.util.HashMap
+
+fun buildMutableMap(hash:HashMap<Int, String>.()-> Unit):Map<Int, String>{
+    val hashmap=HashMap<Int, String>().apply{
+        hash()
+    }
+    return hashmap
+}
+
+fun usage(): Map<Int, String> {
+    return buildMutableMap {
+        put(0, "0")
+        for (i in 1..10) {
+            put(i, "$i")
+        }
+    }
+}
+```
+## The function apply
+The previous examples can be rewritten using the library function apply (see examples below). Write your own implementation of this function named `'myApply'.`
+- ### Solution
+```Kotlin
+fun <T> T.myApply(f: T.() -> Unit): T { 
+        
+          
+    return this.apply{f()}
+}
+
+fun createString(): String {
+    return StringBuilder().myApply {
+        append("Numbers: ")
+        for (i in 1..10) {
+            append(i)
+        }
+    }.toString()
+}
+
+fun createMap(): Map<Int, String> {
+    return hashMapOf<Int, String>().myApply {
+        put(0, "0")
+        for (i in 1..10) {
+            put(i, "$i")
+        }
+    }
+}
+```
+## Builders: how it works
+Look at the questions below and give your answers
+
+1. In the Kotlin code
+```javaScript
+tr {
+    td {
+        text("Product")
+    }
+    td {
+        text("Popularity")
+    }
+}
+```
+'td' is:
+
+a. special built-in syntactic construct
+
+b. function declaration
+
+c. function invocation
+
+2. In the Kotlin code
+```javaScript
+tr (color = "yellow") {
+    td {
+        text("Product")
+    }
+    td {
+        text("Popularity")
+    }
+}
+```
+'color' is:
+
+a. new variable declaration
+
+b. argument name
+
+c. argument value
+
+3. The block
+```javaScript
+{
+    text("Product")
+}
+```
+from the previous question is:
+
+a. block inside built-in syntax construction td
+
+b. function literal (or "lambda")
+
+c. something mysterious
+
+4. For the code
+```javaScript
+tr (color = "yellow") {
+    this.td {
+        text("Product")
+    }
+    td {
+        text("Popularity")
+    }
+}
+```
+which of the following is true:
+
+a. this code doesn't compile
+
+b. this refers to an instance of an outer class
+
+c. this refers to a receiver parameter TR of the function literal:
+```javaScript
+tr (color = "yellow") {
+    this@tr.td {
+        text("Product")
+    }
+}
+```
+- ### Solution
+```Kotlin
+import Answer.*
+
+enum class Answer { a, b, c }
+
+val answers = mapOf<Int, Answer?>(
+        1 to c, 2 to b, 3 to b, 4 to c
+)
+
+```
+## Generic functions
+Make the following code compile by implementing a partitionTo function that splits a collection into two collections according to the predicate.
+
+There is a partition() function in the standard library that always returns two newly created lists. You should write a function that splits the collection into two collections given as arguments. The signature of the toCollection() function from the standard library may help you.
+- ### Solution
+```Kotlin
+import java.util.*
+
+fun <T,H: MutableCollection<T>> Collection<T>.partitionTo(listHead : H, listBody: H, predicate : (T) -> Boolean ) : Pair<H,H> {
+    this.forEach{      
+        val isPredicate = predicate.invoke(it)
+            if(isPredicate) listHead.add(it)
+            else listBody.add(it)
+    }
+     return Pair(listHead,listBody)
+}
+
+fun partitionWordsAndLines() {
+    val (words, lines) = listOf("a", "a b", "c", "d e").
+            partitionTo(ArrayList<String>(), ArrayList()) { s -> !s.contains(" ") }
+    words == listOf("a", "c")
+    lines == listOf("a b", "d e")
+}
+
+fun partitionLettersAndOtherSymbols() {
+    val (letters, other) = setOf('a', '%', 'r', '}').
+            partitionTo(HashSet<Char>(), HashSet()) { c -> c in 'a'..'z' || c in 'A'..'Z'}
+    letters == setOf('a', 'r')
+    other == setOf('%', '}')
 }
 ```
