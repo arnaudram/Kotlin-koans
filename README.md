@@ -21,9 +21,13 @@ Solution proposal for  Kotlin koans
 * [Operators overloading](#operators-overloading)
 * [Destructuring declarations](#destructuring-declarations)
 * [Invoke](#invoke)
+## Collections
 
-
-
+* [Introduction](#introduction)
+* [ Filter; map](#filter-map)
+* [All, Any and other predicates](#all-any-and-other-predicates)
+* [FlatMap](#flatMap)
+* [Max; min](#max-min)
 
 
 ## Simple Functions
@@ -413,4 +417,105 @@ class Invokable {
 }
 
 fun invokeTwice(invokable: Invokable) = invokable()()
+```
+## Introduction
+This part was inspired by GS Collections Kata.
+
+Default collections in Kotlin are Java collections, but there are lots of useful extension functions for them. For example, operations that transform a collection to another one, starting with `'to': toSet or toList.`
+
+Implement an extension function Shop.getSetOfCustomers(). The class Shop and all related classes can be found at Shop.kt
+- ### Solution
+```Kotlin
+fun Shop.getSetOfCustomers(): Set<Customer> = this.customers.toSet()
+```
+## Filter; map
+Implement extension functions Shop.getCitiesCustomersAreFrom() and Shop.getCustomersFrom() using functions map and filter.
+```Kotlin
+val numbers = listOf(1, -1, 2)
+numbers.filter { it > 0 } == listOf(1, 2)
+numbers.map { it * it } == listOf(1, 1, 4)
+```
+- ### Solution
+```Kotlin
+// Return the set of cities the customers are from
+fun Shop.getCitiesCustomersAreFrom(): Set<City> = this.customers.map{
+    it.city
+}.toSet()
+
+// Return a list of the customers who live in the given city
+fun Shop.getCustomersFrom(city: City): List<Customer> = this.customers.filter{
+    it.city==city
+}
+```
+## All, Any and other predicates
+Implement all the functions below using all, any, count, find.
+
+val numbers = listOf(-1, 0, 2)
+val isZero: (Int) -> Boolean = { it == 0 }
+numbers.any(isZero) == true
+numbers.all(isZero) == false
+numbers.count(isZero) == 1
+numbers.find { it > 0 } == 2
+- ### Solution
+```Kotlin
+// Return true if all customers are from the given city
+fun Shop.checkAllCustomersAreFrom(city: City): Boolean = this.customers.all{it->
+  it.city==city  
+}
+
+// Return true if there is at least one customer from the given city
+fun Shop.hasCustomerFrom(city: City): Boolean = this.customers.any{it->
+  it.city==city  
+}
+
+// Return the number of customers from the given city
+fun Shop.countCustomersFrom(city: City): Int = this.customers.count{it->
+ it.city==city   
+}
+
+// Return a customer who lives in the given city, or null if there is none
+fun Shop.findAnyCustomerFrom(city: City): Customer? = this.customers.find{it->
+   it.city==city 
+}
+```
+## FlatMap
+Implement Customer.getOrderedProducts() and Shop.getAllOrderedProducts() using flatMap.
+```Kotlin
+val result = listOf("abc", "12").flatMap { it.toCharList() }
+result == listOf('a', 'b', 'c', '1', '2')
+```
+- ### Solution
+```Kotlin
+// Return all products this customer has ordered
+val Customer.orderedProducts: Set<Product> get() {
+    return this.orders.flatMap{it->
+        it.products
+    }.toSet()
+}
+
+// Return all products that were ordered by at least one customer
+val Shop.allOrderedProducts: Set<Product> get() {
+    return this.customers.flatMap{it-> it.orderedProducts
+           }.toSet()
+}
+```
+## Max; min
+Implement Shop.getCustomerWithMaximumNumberOfOrders() and Customer.getMostExpensiveOrderedProduct() using max, min, maxBy, or minBy.
+```Kotlin
+listOf(1, 42, 4).max() == 42
+listOf("a", "ab").minBy { it.length } == "a"
+```
+- ### Solution
+```Kotlin
+// Return a customer whose order count is the highest among all customers
+fun Shop.getCustomerWithMaximumNumberOfOrders(): Customer? {
+    return this.customers.maxByOrNull{it->
+        it.orders.size
+    }
+}
+
+// Return the most expensive product which has been ordered
+fun Customer.getMostExpensiveOrderedProduct(): Product?{
+    return this.orders.flatMap{it.products}.maxByOrNull{it.price}
+}
 ```
